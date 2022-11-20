@@ -284,7 +284,7 @@ public class PanelGame extends JComponent {
                 if (!player.updateHP(rocketHp)) {
                     player.setAlive(false);
                     double x = player.getX() + Player.PLAYER_SIZE / 2;
-                    double y = player.getY() + Player.PLAYER_SIZE / 2;
+                    double y = player.getY() + Player.PLAYER_SIZE  / 2;
                     boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
                     boomEffects.add(new Effect(x, y, 5, 5, 75, 0.1f, new Color(32, 178, 169)));
                     boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(230, 207, 105)));
