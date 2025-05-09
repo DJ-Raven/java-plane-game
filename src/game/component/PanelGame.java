@@ -29,6 +29,7 @@ public class PanelGame extends JComponent {
     private int height;
     private Thread thread;
     private boolean start = true;
+    private boolean isPause;
     private Key key;
     private int shotTime;
 
@@ -96,7 +97,9 @@ public class PanelGame extends JComponent {
             @Override
             public void run() {
                 while (start) {
-                    addRocket();
+                    if (!isPause) {
+                        addRocket();
+                    }
                     sleep(3000);
                 }
             }
@@ -129,6 +132,10 @@ public class PanelGame extends JComponent {
                     key.setKey_k(true);
                 } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     key.setKey_enter(true);
+                } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    if (start && player.isAlive()) {
+                        isPause = !isPause;
+                    }
                 }
             }
 
@@ -154,51 +161,53 @@ public class PanelGame extends JComponent {
             public void run() {
                 float s = 0.5f;
                 while (start) {
-                    if (player.isAlive()) {
-                        float angle = player.getAngle();
-                        if (key.isKey_left()) {
-                            angle -= s;
-                        }
-                        if (key.isKey_right()) {
-                            angle += s;
-                        }
-                        if (key.isKey_j() || key.isKey_k()) {
-                            if (shotTime == 0) {
-                                if (key.isKey_j()) {
-                                    bullets.add(0, new Bullet(player.getX(), player.getY(), player.getAngle(), 5, 3f));
-                                } else {
-                                    bullets.add(0, new Bullet(player.getX(), player.getY(), player.getAngle(), 20, 3f));
-                                }
-                                sound.soundShoot();
+                    if (!isPause) {
+                        if (player.isAlive()) {
+                            float angle = player.getAngle();
+                            if (key.isKey_left()) {
+                                angle -= s;
                             }
-                            shotTime++;
-                            if (shotTime == 15) {
+                            if (key.isKey_right()) {
+                                angle += s;
+                            }
+                            if (key.isKey_j() || key.isKey_k()) {
+                                if (shotTime == 0) {
+                                    if (key.isKey_j()) {
+                                        bullets.add(0, new Bullet(player.getX(), player.getY(), player.getAngle(), 5, 3f));
+                                    } else {
+                                        bullets.add(0, new Bullet(player.getX(), player.getY(), player.getAngle(), 20, 3f));
+                                    }
+                                    sound.soundShoot();
+                                }
+                                shotTime++;
+                                if (shotTime == 15) {
+                                    shotTime = 0;
+                                }
+                            } else {
                                 shotTime = 0;
                             }
-                        } else {
-                            shotTime = 0;
-                        }
-                        if (key.isKey_space()) {
-                            player.speedUp();
-                        } else {
-                            player.speedDown();
-                        }
-                        player.update();
-                        player.changeAngle(angle);
-                    } else {
-                        if (key.isKey_enter()) {
-                            resetGame();
-                        }
-                    }
-                    for (int i = 0; i < rockets.size(); i++) {
-                        Rocket rocket = rockets.get(i);
-                        if (rocket != null) {
-                            rocket.update();
-                            if (!rocket.check(width, height)) {
-                                rockets.remove(rocket);
+                            if (key.isKey_space()) {
+                                player.speedUp();
                             } else {
-                                if (player.isAlive()) {
-                                    checkPlayer(rocket);
+                                player.speedDown();
+                            }
+                            player.update();
+                            player.changeAngle(angle);
+                        } else {
+                            if (key.isKey_enter()) {
+                                resetGame();
+                            }
+                        }
+                        for (int i = 0; i < rockets.size(); i++) {
+                            Rocket rocket = rockets.get(i);
+                            if (rocket != null) {
+                                rocket.update();
+                                if (!rocket.check(width, height)) {
+                                    rockets.remove(rocket);
+                                } else {
+                                    if (player.isAlive()) {
+                                        checkPlayer(rocket);
+                                    }
                                 }
                             }
                         }
@@ -215,27 +224,29 @@ public class PanelGame extends JComponent {
             @Override
             public void run() {
                 while (start) {
-                    for (int i = 0; i < bullets.size(); i++) {
-                        Bullet bullet = bullets.get(i);
-                        if (bullet != null) {
-                            bullet.update();
-                            checkBullets(bullet);
-                            if (!bullet.check(width, height)) {
+                    if (!isPause) {
+                        for (int i = 0; i < bullets.size(); i++) {
+                            Bullet bullet = bullets.get(i);
+                            if (bullet != null) {
+                                bullet.update();
+                                checkBullets(bullet);
+                                if (!bullet.check(width, height)) {
+                                    bullets.remove(bullet);
+                                }
+                            } else {
                                 bullets.remove(bullet);
                             }
-                        } else {
-                            bullets.remove(bullet);
                         }
-                    }
-                    for (int i = 0; i < boomEffects.size(); i++) {
-                        Effect boomEffect = boomEffects.get(i);
-                        if (boomEffect != null) {
-                            boomEffect.update();
-                            if (!boomEffect.check()) {
+                        for (int i = 0; i < boomEffects.size(); i++) {
+                            Effect boomEffect = boomEffects.get(i);
+                            if (boomEffect != null) {
+                                boomEffect.update();
+                                if (!boomEffect.check()) {
+                                    boomEffects.remove(boomEffect);
+                                }
+                            } else {
                                 boomEffects.remove(boomEffect);
                             }
-                        } else {
-                            boomEffects.remove(boomEffect);
                         }
                     }
                     sleep(1);
@@ -346,6 +357,14 @@ public class PanelGame extends JComponent {
             double textHeight = r2.getHeight();
             double x = (width - textWidth) / 2;
             double y = (height - textHeight) / 2;
+
+            // draw background
+            g2.setColor(new Color(255, 255, 255, 10));
+            int grow = 30;
+            int bottom = 30;
+            g2.fill(new Rectangle2D.Double(x - grow, y - grow, textWidth + grow * 2, textHeight + grow * 2 + bottom));
+
+            g2.setColor(Color.WHITE);
             g2.drawString(text, (int) x, (int) y + fm.getAscent());
             g2.setFont(getFont().deriveFont(Font.BOLD, 15f));
             fm = g2.getFontMetrics();
@@ -355,6 +374,23 @@ public class PanelGame extends JComponent {
             x = (width - textWidth) / 2;
             y = (height - textHeight) / 2;
             g2.drawString(textKey, (int) x, (int) y + fm.getAscent() + 50);
+        }
+        if (isPause) {
+            String text = "GAME IS PAUSED";
+            g2.setFont(getFont().deriveFont(Font.BOLD, 30f));
+            FontMetrics fm = g2.getFontMetrics();
+            Rectangle2D r2 = fm.getStringBounds(text, g2);
+            double textWidth = r2.getWidth();
+            double textHeight = r2.getHeight();
+            double x = (width - textWidth) / 2;
+            double y = (height - textHeight) / 2;
+
+            // draw background
+            g2.setColor(new Color(255, 255, 255, 10));
+            int grow = 30;
+            g2.fill(new Rectangle2D.Double(x - grow, y - grow, textWidth + grow * 2, textHeight + grow * 2));
+            g2.setColor(Color.WHITE);
+            g2.drawString(text, (int) x, (int) y + fm.getAscent());
         }
     }
 
